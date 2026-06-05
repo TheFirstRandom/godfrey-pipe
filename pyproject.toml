@@ -7,7 +7,8 @@ name = "godfrey-pipe"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "mkdocs~=1.6.1"
+    "mkdocs-material~=9.7.6",
+    "mkdocstrings[python]",
 ]
 authors = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
 maintainers = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
