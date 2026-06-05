@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.3.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "godfrey-pipe"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "mkdocs~=1.6.1"
+]
+authors = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
+maintainers = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
+description = "A compleaty offline virtual personal assistant featuring tool integrations."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
