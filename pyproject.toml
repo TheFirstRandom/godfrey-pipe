@@ -17,6 +17,7 @@ dependencies = [
     "ollama~=0.6.2",
     "kokoro-tts~=2.3.1",
     "wyoming~=1.9.0",
+    "huggingface_hub[cli]"
 ]
 authors = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
 maintainers = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]

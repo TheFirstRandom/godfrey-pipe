@@ -9,3 +9,4 @@ faster-whisper~=1.2.1
 ollama~=0.6.2
 kokoro-tts~=2.3.1
 wyoming~=1.9.0
+huggingface_hub[cli]
