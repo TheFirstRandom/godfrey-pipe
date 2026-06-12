@@ -1,5 +1,5 @@
-import os
-from pathlib import Path
+# import os
+# from pathlib import Path
 
 import openwakeword
 import silero_vad
@@ -10,15 +10,17 @@ import kokoro
 
 class OpenWakeWord:
     def __init__(self):
-        model_path_var = os.environ.get("OPENWAKEWORD_MODEL_PATH")
-        if not model_path_var:
-            raise ValueError("Missing value for OPENWAKEWORD_MODEL_PATH")
+        # model_path_var = os.environ.get("OPENWAKEWORD_MODEL_PATH")
+        # if not model_path_var:
+        #     raise ValueError("Missing value for OPENWAKEWORD_MODEL_PATH")
+        #
+        # self.model_path = Path(model_path_var)
+        # if not self.model_path.exists():
+        #     raise FileExistsError(f"File not found: {self.model_path}")
 
-        self.model_path = Path(model_path_var)
-        if not self.model_path.exists():
-            raise FileExistsError(f"File not found: {self.model_path}")
+        openwakeword.utils.download_models()
 
-        self.model = openwakeword.model.Model(wakeword_models=[str(self.model_path)])
+        self.model = openwakeword.model.Model()
 
     def predict(self, frame) -> bool:
         prediction = self.model.predict(frame)
@@ -53,4 +55,4 @@ class Qwen:
 
 class KokoroTTS:
     def __init__(self):
-        self.pipeline = kokoro.KPipeline(lang_code="a")
+        self.pipeline = kokoro.KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
