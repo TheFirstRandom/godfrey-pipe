@@ -57,24 +57,18 @@ class KokoroTTS:
         if not model_path_var:
             raise ValueError("Missing value for KOKORO_MODEL_PATH")
 
-        voices_path_var = os.environ.get("KOKORO_VOICES_PATH")
-        if not voices_path_var:
-            raise ValueError("Missing value for KOKORO_VOICES_PATH")
-
         self.model_path = Path(model_path_var)
         if not self.model_path.exists():
             raise FileExistsError(f"File not found: {self.model_path}")
 
-        self.voices_path = Path(voices_path_var)
-        if not self.voices_path.exists():
-            raise FileExistsError(f"File not found: {self.voices_path}")
+        self.voices_path = self.model_path / "voices"
 
         self.model = kokoro_tts.Kokoro(str(self.model_path), str(self.voices_path))
 
-    def transcribe(self, text):
+    def transcribe(self, text, voice):
         samples, sample_rate = self.model.create(
             text=text,
-            voice="godfrey",
+            voice=voice,
             speed=0.75,
             lang="en-us"
         )
