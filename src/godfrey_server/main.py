@@ -1,16 +1,16 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from importlib.metadata import version
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
-from godfrey_server import __version__
 from godfrey_server import server
 
 
 def cli():
     console = Console(highlight=False)
     console.print("Waking up Godfrey...", style="bold")
-    console.print(f"Server version: {__version__}\n")
+    console.print(f"Server version: {version('godfrey-pipe')}\n")
 
     with Progress(
         SpinnerColumn(),
@@ -45,3 +45,7 @@ def cli():
                     completed=1,
                     description=f"[green]✓[/green] {label} loaded"
                 )
+
+
+if __name__ == "__main__":
+    cli()
