@@ -1,8 +1,7 @@
-import threading
-from typing import cast
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn, TaskID
+from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 from godfrey_server import __version__
 from godfrey_server import server
@@ -19,42 +18,30 @@ def cli():
         TimeElapsedColumn(),
         console=console
     ) as progress:
-        threads = {
-            "openWakeWord": {
-                "track": progress.add_task("Loading [cyan]openWakeWord[/cyan]...", total=None),
-                "thread": threading.Thread(target=server.load_wws),
-            },
-            "Silero VAD": {
-                "track": progress.add_task("Loading [cyan]Silero VAD[/cyan]...", total=None),
-                "thread": threading.Thread(target=server.load_vad),
-            },
-            "faster-whisper": {
-                "track": progress.add_task("Loading [cyan]faster-whisper[/cyan]...", total=None),
-                "thread": threading.Thread(target=server.load_stt),
-            },
-            "Qwen 3.6": {
-                "track": progress.add_task("Loading [cyan]Qwen 3.6[/cyan]...", total=None),
-                "thread": threading.Thread(target=server.load_llm),
-            },
-            "Kokoro TTS": {
-                "track": progress.add_task("Loading [cyan]Kokoro TTS[/cyan]...", total=None),
-                "thread": threading.Thread(target=server.load_tts),
-            },
-        }
+        tasks = [
+            ("openWakeWord", server.load_wws),
+            ("Silero VAD", server.load_vad),
+            ("faster-whisper", server.load_stt),
+            ("Qwen 3.6", server.load_llm),
+            ("Kokoro TTS", server.load_tts),
+        ]
 
-        for name, data in threads.items():
-            task_id = cast(TaskID, data["track"])
-            thread = cast(threading.Thread, data["thread"])
+        with ThreadPoolExecutor() as executor:
+            # Future -> (label, task_id) mapping
+            future_map = {
+                executor.submit(fn): (
+                    label,
+                    progress.add_task(f"Loading {label}...", total=1)
+                ) for label, fn in tasks
+            }
 
-            thread.start()
-            progress.update(task_id)
+            results = {}
+            for future in as_completed(future_map):
+                label, task_id = future_map[future]
+                results[label] = future.result()
 
-        for name, data in threads.items():
-            task_id = cast(TaskID, data["track"])
-            thread = cast(threading.Thread, data["thread"])
-
-            thread.join()
-
-
-if __name__ == "__main__":
-    cli()
+                progress.update(
+                    task_id,
+                    completed=1,
+                    description=f"[green]✓[/green] {label} loaded"
+                )
