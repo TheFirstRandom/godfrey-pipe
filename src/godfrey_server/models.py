@@ -5,7 +5,7 @@ import openwakeword
 import silero_vad
 import faster_whisper
 import ollama
-import kokoro_tts
+import kokoro
 
 
 class OpenWakeWord:
@@ -53,22 +53,4 @@ class Qwen:
 
 class KokoroTTS:
     def __init__(self):
-        model_path_var = os.environ.get("KOKORO_MODEL_PATH")
-        if not model_path_var:
-            raise ValueError("Missing value for KOKORO_MODEL_PATH")
-
-        self.model_path = Path(model_path_var)
-        if not self.model_path.exists():
-            raise FileExistsError(f"File not found: {self.model_path}")
-
-        self.voices_path = self.model_path / "voices"
-
-        self.model = kokoro_tts.Kokoro(str(self.model_path), str(self.voices_path))
-
-    def transcribe(self, text, voice):
-        samples, sample_rate = self.model.create(
-            text=text,
-            voice=voice,
-            speed=0.75,
-            lang="en-us"
-        )
+        self.pipeline = kokoro.KPipeline(lang_code="a")

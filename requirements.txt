@@ -7,6 +7,6 @@ openwakeword~=0.6.0
 silero-vad~=6.2.1
 faster-whisper~=1.2.1
 ollama~=0.6.2
-kokoro-tts~=2.3.1
+kokoro~=0.9.4
 wyoming~=1.9.0
 huggingface_hub[cli]
