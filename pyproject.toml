@@ -1,16 +1,22 @@
 [build-system]
-requires = ["setuptools>=61.3.1"]
+requires = ["setuptools~=82.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "godfrey-pipe"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "uv~=0.11.20",
     "mkdocs-material~=9.7.6",
     "mkdocstrings[python]",
-    "rich~=15.0.0"
+    "rich~=15.0.0",
+    "openwakeword~=0.6.0",
+    "silero-vad~=6.2.1",
+    "faster-whisper~=1.2.1",
+    "ollama~=0.6.2",
+    "kokoro-tts~=2.3.1",
+    "wyoming~=1.9.0",
 ]
 authors = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
 maintainers = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
