@@ -12,6 +12,7 @@ def cli():
     console.print("Waking up Godfrey...", style="bold")
     console.print(f"Server version: {version('godfrey-pipe')}\n")
 
+    # everything inside this Progress written with help of AI (see index 3 in docs)
     with Progress(
         SpinnerColumn(),
         TextColumn("{task.description}"),
