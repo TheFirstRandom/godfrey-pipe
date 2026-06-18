@@ -7,6 +7,8 @@ import faster_whisper
 import ollama
 import kokoro
 
+import data
+
 
 class OpenWakeWord:
     def __init__(self):
@@ -26,11 +28,21 @@ class OpenWakeWord:
         prediction = self.model.predict(frame)
         return next(iter(prediction.values()))
 
+    def reset(self):
+        self.model.reset()
+
 
 class SileroVAD:
     def __init__(self):
         self.model = silero_vad.load_silero_vad()
         self.iterator = silero_vad.VADIterator(self.model, sampling_rate=16000)
+
+    def predict(self, chunk):
+        result = self.iterator(chunk, return_seconds=True)
+        return False if "end" in result else True
+
+    def reset(self):
+        self.iterator.reset_states()
 
 
 class FasterWhisper:
@@ -38,16 +50,25 @@ class FasterWhisper:
         self.model = faster_whisper.WhisperModel("large-v3", device="cpu", compute_type="int8")
 
     def transcribe(self, audio):
-        segments, info = self.model.transcribe(audio)
-
+        segments, info = self.model.transcribe(audio, language="en")
         return " ".join(segment.text for segment in segments)
 
 
 class Qwen:
     def __init__(self):
-        self.chat = ollama.chat(
+        self.messages = [
+            {"role": "system", "content": data.system_prompt}
+        ]
+        self.answer("", init=True)
+
+    def answer(self, user_input: str, init: bool = False):
+        messages = self.messages
+        if not init:
+            messages.append({"role": "user", "content": user_input})
+
+        return ollama.chat(
             model="qwen3.6",
-            messages=[],
+            messages=messages,
             stream=True,
             keep_alive=-1
         )
@@ -56,3 +77,12 @@ class Qwen:
 class KokoroTTS:
     def __init__(self):
         self.pipeline = kokoro.KPipeline(lang_code="a", repo_id="hexgrad/Kokoro-82M")
+
+    def transcribe(self, text: str):
+        generator = self.pipeline(
+            text,
+            voice="af_heart",
+            speed=0.75,
+            split_pattern=r"\n+"
+        )
+        return [i for i in generator]

@@ -1,3 +1,4 @@
+import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from importlib.metadata import version
 
@@ -46,6 +47,9 @@ def cli():
                     completed=1,
                     description=f"[green]✓[/green] {label} loaded"
                 )
+
+    console.print("Starting server...", style="bold")
+    asyncio.run(server.start_server())
 
 
 if __name__ == "__main__":

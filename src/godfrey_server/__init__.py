@@ -6,4 +6,5 @@ warnings.filterwarnings("ignore", category=FutureWarning, message=".*weight_norm
 
 from . import server
 from . import models
+from . import data
 from .main import cli
