@@ -7,7 +7,10 @@ import faster_whisper
 import ollama
 import kokoro
 
-import data
+# Fix: `import data` failed because data.py lives inside the godfrey_server
+# package, not as a top-level module. Import it the same way main.py and
+# server.py import their package siblings.
+from godfrey_server import data
 
 
 class OpenWakeWord:
@@ -26,7 +29,12 @@ class OpenWakeWord:
 
     def predict(self, frame) -> bool:
         prediction = self.model.predict(frame)
-        return next(iter(prediction.values()))
+        score = next(iter(prediction.values()))
+        # Fix: openWakeWord returns a confidence score (float), not a bool.
+        # server.py checks `prediction is True`, which is never true for a
+        # float, so the wake word could never actually fire. Apply a
+        # threshold here and hand back a real bool instead.
+        return score > 0.5
 
     def reset(self):
         self.model.reset()
@@ -61,17 +69,27 @@ class Qwen:
         ]
         self.answer("", init=True)
 
-    def answer(self, user_input: str, init: bool = False):
+    def answer(self, user_input: str, init: bool = False) -> str:
         messages = self.messages
         if not init:
             messages.append({"role": "user", "content": user_input})
 
-        return ollama.chat(
+        # Fix: stream=True made ollama.chat() return a generator. server.py
+        # treats the result as a finished string (e.g. `len(answer)`),
+        # which crashed. Switched to a blocking call and extracted the
+        # final text from the response instead.
+        response = ollama.chat(
             model="qwen3.6",
             messages=messages,
-            stream=True,
+            stream=False,
             keep_alive=-1
         )
+        answer_text = response["message"]["content"]
+
+        if not init:
+            messages.append({"role": "assistant", "content": answer_text})
+
+        return answer_text
 
 
 class KokoroTTS:

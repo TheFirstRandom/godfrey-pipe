@@ -49,7 +49,10 @@ def cli():
                 )
 
     console.print("Starting server...", style="bold")
-    asyncio.run(server.start_server())
+    # Fix: the loaded models (`results`) and the console were never handed
+    # to the server before, so start_server() had nothing to give the
+    # VoiceHandler instances. start_server() now accepts both.
+    asyncio.run(server.start_server(results, console))
 
 
 if __name__ == "__main__":
