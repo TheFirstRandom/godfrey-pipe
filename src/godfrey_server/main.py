@@ -48,7 +48,7 @@ def cli():
                     description=f"[green]✓[/green] {label} loaded"
                 )
 
-    console.print("Starting server...", style="bold")
+    console.print("[green]✓[/green] Server running", style="bold")
     # Fix: the loaded models (`results`) and the console were never handed
     # to the server before, so start_server() had nothing to give the
     # VoiceHandler instances. start_server() now accepts both.

@@ -56,7 +56,8 @@ class VoiceHandler(AsyncEventHandler):
             # chunk into a proper int16 sample array instead.
             samples = np.frombuffer(raw, dtype=np.int16)
             prediction = self.models["openWakeWord"].predict(samples)
-            if prediction is True:
+            if prediction > 0.3:
+                self.console.print(f"[openWakeWord] predicted {round(prediction, 3)}")
                 self.change_state("listening")
                 self.models["openWakeWord"].reset()
 
@@ -89,7 +90,7 @@ class VoiceHandler(AsyncEventHandler):
         # Assumption: Kokoro's KPipeline yields result objects exposing an
         # `.audio` attribute (float32 waveform, 24 kHz, mono) - adjust the
         # attribute name below if your installed kokoro version differs.
-        sample_rate = 24000
+        sample_rate = 16000
         sample_width = 2  # 16-bit PCM
         channels = 1
 

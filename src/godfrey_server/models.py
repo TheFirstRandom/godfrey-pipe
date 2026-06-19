@@ -47,7 +47,11 @@ class SileroVAD:
 
     def predict(self, chunk):
         result = self.iterator(chunk, return_seconds=True)
-        return False if "end" in result else True
+
+        if result is not None and "end" in result:
+            return False
+        else:
+            return True
 
     def reset(self):
         self.iterator.reset_states()
@@ -71,7 +75,11 @@ class Qwen:
 
     def answer(self, user_input: str, init: bool = False) -> str:
         messages = self.messages
-        if not init:
+        options = {}
+
+        if init:
+            options.update({"num_predict": 1})
+        else:
             messages.append({"role": "user", "content": user_input})
 
         # Fix: stream=True made ollama.chat() return a generator. server.py
@@ -82,12 +90,10 @@ class Qwen:
             model="qwen3.6",
             messages=messages,
             stream=False,
-            keep_alive=-1
+            keep_alive=-1,
+            options=options,
         )
         answer_text = response["message"]["content"]
-
-        if not init:
-            messages.append({"role": "assistant", "content": answer_text})
 
         return answer_text
 
