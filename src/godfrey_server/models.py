@@ -34,7 +34,7 @@ class OpenWakeWord:
         # server.py checks `prediction is True`, which is never true for a
         # float, so the wake word could never actually fire. Apply a
         # threshold here and hand back a real bool instead.
-        return score > 0.5
+        return score
 
     def reset(self):
         self.model.reset()
@@ -87,7 +87,7 @@ class Qwen:
         # which crashed. Switched to a blocking call and extracted the
         # final text from the response instead.
         response = ollama.chat(
-            model="qwen3.6",
+            model="qwen3:4b",
             messages=messages,
             stream=False,
             keep_alive=-1,
@@ -105,8 +105,8 @@ class KokoroTTS:
     def transcribe(self, text: str):
         generator = self.pipeline(
             text,
-            voice="af_heart",
-            speed=0.75,
+            voice="am_michael",
+            speed=1,
             split_pattern=r"\n+"
         )
         return [i for i in generator]

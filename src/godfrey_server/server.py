@@ -56,8 +56,8 @@ class VoiceHandler(AsyncEventHandler):
             # chunk into a proper int16 sample array instead.
             samples = np.frombuffer(raw, dtype=np.int16)
             prediction = self.models["openWakeWord"].predict(samples)
-            if prediction > 0.3:
-                self.console.print(f"[openWakeWord] predicted {round(prediction, 3)}")
+            if prediction > 0.4:
+                self.console.print(f"\\[openWakeWord\\] predicted {prediction}")
                 self.change_state("listening")
                 self.models["openWakeWord"].reset()
 
