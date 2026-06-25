@@ -1,0 +1,52 @@
+#!/usr/bin/python3
+
+from paho.mqtt import client as mqtt_client
+import time
+
+broker = "172.19.30.30"
+mqtt_port = 1883
+mqtt_keepalive = 60
+script_health_topic = "godfrey/monitoring/lights_on_script/health"
+light_topic = "godfrey/control/light"
+message_1 = "1"
+message_0 = "0"
+client_id = "godfrey-light-script"
+mqtt_username = "ioeuser"
+mqtt_password = "1234"
+
+def connect_mqtt():
+    def on_connect(client, userdata, flags, reason_code, properties):
+
+        if reason_code == 0:
+            print("Connected to MQTT Broker")
+        else:
+            print("Failed to connect, reason code:", reason_code)
+
+    client = mqtt_client.Client(
+        client_id = client_id,
+        callback_api_version = mqtt_client.CallbackAPIVersion.VERSION2
+    )
+
+    client.username_pw_set(mqtt_username, mqtt_password)
+    client.on_connect = on_connect
+    client.connect(broker, mqtt_port, mqtt_keepalive)
+    return client
+
+def turn_on_lights():
+    i = 0
+    client = connect_mqtt()
+    client.loop_start()
+    print("Loop started")
+    time.sleep(3)
+    while i < 3:
+        client.publish(light_topic, message_1)
+        i = i + 1
+        time.sleep(1)
+
+    client.loop_stop()
+    print("Loop stopped")
+    client.disconnect()
+    print("Disconnected from MQTT Broker")
+
+if __name__ == "__main__":
+    turn_on_lights()

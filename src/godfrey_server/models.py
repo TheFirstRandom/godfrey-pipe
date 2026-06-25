@@ -6,6 +6,7 @@ import kokoro
 import ollama
 import openwakeword
 import silero_vad
+import subprocess
 
 # Fix: `import data` failed because data.py lives inside the godfrey_server
 # package, not as a top-level module. Import it the same way main.py and
@@ -21,9 +22,12 @@ class OpenWakeWord:
 
         model_path = Path(model_path_var)
         if not model_path.exists():
-            raise FileExistsError(f"File not found: {model_path}")
+            raise FileNotFoundError(f"File not found: {model_path}")
 
-        self.model = openwakeword.model.Model([model_path_var])
+        self.model = openwakeword.model.Model(
+            [model_path_var],
+            inference_framework="onnx",
+        )
 
     def predict(self, frame) -> bool:
         prediction = self.model.predict(frame)
@@ -66,34 +70,68 @@ class FasterWhisper:
 
 class Qwen:
     def __init__(self):
-        self.answer("", init=True)
+        self._generate([], [], {"num_predict": 1})
 
-    @staticmethod
-    def answer(user_input: str, init: bool = False) -> str:
+    def answer(self, user_input: str) -> str:
         messages = [
-            {"role": "system", "content": data.system_prompt}
+            {"role": "system", "content": data.system_prompt},
+            {"role": "user", "content": user_input}
         ]
 
-        options = {}
-        if init:
-            options.update({"num_predict": 1})
-        else:
-            messages.append({"role": "user", "content": user_input})
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "turn_on_lights",
+                    "description": "Activate an LED light",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "turn_off_lights",
+                    "description": "Turn off the LED light",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {}
+                    }
+                }
+            },
+        ]
 
         # Fix: stream=True made ollama.chat() return a generator. server.py
         # treats the result as a finished string (e.g. `len(answer)`),
         # which crashed. Switched to a blocking call and extracted the
         # final text from the response instead.
-        response = ollama.chat(
+        response = self._generate(messages, tools, {})
+        answer_text = response["message"]["content"]
+        tool_calls = response["tool_calls"]
+
+        for call in tool_calls:
+            function = call["function"]["name"]
+            messages.append(
+                {"role": "tool", "content": f""}
+            )
+
+        if tool_calls:
+            answer_text += "\n" + self._generate(messages, [], {})
+
+        return answer_text
+
+    @staticmethod
+    def _generate(messages: list, tools: list, options: dict):
+        return ollama.chat(
             model="qwen3:4b",
             messages=messages,
+            tools=tools,
             stream=False,
             keep_alive=-1,
             options=options,
         )
-        answer_text = response["message"]["content"]
-
-        return answer_text
 
 
 class KokoroTTS:

@@ -7,13 +7,13 @@ sudo apt install pipx
 pipx install uv
 ```
 
-**Install godfrey-pipe and Ollama**
+**Install godfrey-pipe and dependencies**
 
 ```bash
-# Ollama
 curl -fsSL https://ollama.com/install.sh | sh
 
-# Godfrey
+sudo apt install python3-paho-mqtt
+
 git clone https://github.com/TheFirstRandom/godfrey-pipe.git
 cd godfrey-pipe
 uv venv --python 3.11
