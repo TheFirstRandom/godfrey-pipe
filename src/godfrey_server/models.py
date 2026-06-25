@@ -66,19 +66,17 @@ class FasterWhisper:
 
 class Qwen:
     def __init__(self):
-        self.messages = [
-            {"role": "system", "content": data.system_prompt}
-        ]
         self.answer("", init=True)
 
-    def answer(self, user_input: str, init: bool = False) -> str:
-        messages = self.messages
-        options = {}
+    @staticmethod
+    def answer(user_input: str, init: bool = False) -> str:
+        messages = [
+            {"role": "system", "content": data.system_prompt}
+        ]
 
-        if init:
-            options.update({"num_predict": 1})
-        else:
-            messages.append({"role": "user", "content": user_input})
+        options = {}
+        if init: options.update({"num_predict": 1})
+        else: messages.append({"role": "user", "content": user_input})
 
         # Fix: stream=True made ollama.chat() return a generator. server.py
         # treats the result as a finished string (e.g. `len(answer)`),

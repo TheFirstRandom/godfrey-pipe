@@ -4,6 +4,7 @@ from typing import Literal, cast
 
 import numpy as np
 from rich.console import Console
+from scipy.signal import resample_poly
 from wyoming.server import AsyncEventHandler, AsyncServer
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.event import Event
@@ -56,7 +57,7 @@ class VoiceHandler(AsyncEventHandler):
             # chunk into a proper int16 sample array instead.
             samples = np.frombuffer(raw, dtype=np.int16)
             prediction = self.models["openWakeWord"].predict(samples)
-            if prediction > 0.4:
+            if prediction > 0.3:
                 self.console.print(f"\\[openWakeWord\\] predicted {prediction}")
                 self.change_state("listening")
                 self.models["openWakeWord"].reset()
@@ -96,8 +97,10 @@ class VoiceHandler(AsyncEventHandler):
         await self.write_event(AudioStart(rate=sample_rate, width=sample_width, channels=channels).event())
 
         for result in audio:
-            samples = np.asarray(result.audio)
-            pcm_bytes = (samples * 32767).astype(np.int16).tobytes()
+            samples = np.asarray(result.audio, dtype=np.float32)
+            samples_16k = resample_poly(samples, 2, 3)
+            pcm_bytes = (samples_16k * 32767).astype(np.int16).tobytes()
+
             await self.write_event(
                 AudioChunk(rate=sample_rate, width=sample_width, channels=channels, audio=pcm_bytes).event()
             )
