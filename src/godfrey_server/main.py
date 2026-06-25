@@ -24,7 +24,7 @@ def cli():
             ("openWakeWord", server.load_wws),
             ("Silero VAD", server.load_vad),
             ("faster-whisper", server.load_stt),
-            ("Qwen 3.6", server.load_llm),
+            ("Qwen 3", server.load_llm),
             ("Kokoro TTS", server.load_tts),
         ]
 

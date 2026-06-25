@@ -68,17 +68,16 @@ class VoiceHandler(AsyncEventHandler):
         raw_audio = b"".join(self.recording)
         audio_array = np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32) / 32768.0
         user_text = self.models["faster-whisper"].transcribe(audio_array)
-        self.console.print("Result:", user_text[:100] if len(user_text) > 100 else user_text)
+        self.console.print("Result:", user_text)
 
         self.console.print("[2/3] Generating answer...")
-        answer = self.models["Qwen 3.6"].answer(user_text)
-        self.console.print("Result:", answer[:100] if len(answer) > 100 else answer)
+        answer = self.models["Qwen 3"].answer(user_text)
+        self.console.print("Result:", answer)
 
         self.console.print("[3/3] Generating voice...")
         # Fix: transcribe() requires the text to synthesize; it was being
         # called with no arguments at all, which would raise a TypeError.
         audio = self.models["Kokoro TTS"].transcribe(answer)
-        self.console.print("Result:", audio[0] if audio else "no output")
 
         if audio:
             await self.send_answer(audio)

@@ -1,5 +1,5 @@
-# import os
-# from pathlib import Path
+import os
+from pathlib import Path
 
 import openwakeword
 import silero_vad
@@ -15,17 +15,15 @@ from godfrey_server import data
 
 class OpenWakeWord:
     def __init__(self):
-        # model_path_var = os.environ.get("OPENWAKEWORD_MODEL_PATH")
-        # if not model_path_var:
-        #     raise ValueError("Missing value for OPENWAKEWORD_MODEL_PATH")
-        #
-        # self.model_path = Path(model_path_var)
-        # if not self.model_path.exists():
-        #     raise FileExistsError(f"File not found: {self.model_path}")
+        model_path_var = os.getenv("OPENWAKEWORD_MODEL_PATH")
+        if not model_path_var:
+            raise ValueError("Missing value for OPENWAKEWORD_MODEL_PATH")
 
-        openwakeword.utils.download_models()
+        model_path = Path(model_path_var)
+        if not model_path.exists():
+            raise FileExistsError(f"File not found: {model_path}")
 
-        self.model = openwakeword.model.Model()
+        self.model = openwakeword.model.Model([model_path_var])
 
     def predict(self, frame) -> bool:
         prediction = self.model.predict(frame)
@@ -59,7 +57,7 @@ class SileroVAD:
 
 class FasterWhisper:
     def __init__(self):
-        self.model = faster_whisper.WhisperModel("large-v3", device="cpu", compute_type="int8")
+        self.model = faster_whisper.WhisperModel("large-v3", device="cuda", compute_type="int8")
 
     def transcribe(self, audio):
         segments, info = self.model.transcribe(audio, language="en")
@@ -105,7 +103,7 @@ class KokoroTTS:
     def transcribe(self, text: str):
         generator = self.pipeline(
             text,
-            voice="am_michael",
+            voice="af_heart",
             speed=1,
             split_pattern=r"\n+"
         )
