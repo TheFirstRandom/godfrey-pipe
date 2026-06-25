@@ -49,9 +49,6 @@ def cli():
                 )
 
     console.print("[green]✓[/green] Server running", style="bold")
-    # Fix: the loaded models (`results`) and the console were never handed
-    # to the server before, so start_server() had nothing to give the
-    # VoiceHandler instances. start_server() now accepts both.
     asyncio.run(server.start_server(results, console))
 
 

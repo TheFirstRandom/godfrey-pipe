@@ -16,6 +16,8 @@ from godfrey_server import data
 
 class OpenWakeWord:
     def __init__(self):
+        openwakeword.utils.download_models()
+
         model_path_var = os.getenv("OPENWAKEWORD_MODEL_PATH")
         if not model_path_var:
             raise ValueError("Missing value for OPENWAKEWORD_MODEL_PATH")
@@ -145,8 +147,8 @@ class KokoroTTS:
     def transcribe(self, text: str):
         generator = self.pipeline(
             text,
-            voice="af_heart",
-            speed=1,
+            voice="bm_lewis",
+            speed=0.75,
             split_pattern=r"\n+"
         )
         return [i for i in generator]

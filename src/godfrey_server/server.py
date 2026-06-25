@@ -37,7 +37,7 @@ class VoiceHandler(AsyncEventHandler):
         if self.state == "listening":
             self.recording.append(raw)
 
-            # Fix: Silero VAD expects float32 samples in [-1, 1], not raw
+            # AI generated fix (index ): Silero VAD expects float32 samples in [-1, 1], not raw
             # 16-bit PCM bytes. Convert before feeding it to the model.
             samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
             if self.models["Silero VAD"].predict(samples) is False:
@@ -57,13 +57,15 @@ class VoiceHandler(AsyncEventHandler):
             # chunk into a proper int16 sample array instead.
             samples = np.frombuffer(raw, dtype=np.int16)
             prediction = self.models["openWakeWord"].predict(samples)
-            if prediction > 0.3:
+            if prediction > 0.2:
+                await self.play_notification("Notification1.wav", volume=0.6)
                 self.console.print(f"\\[openWakeWord\\] predicted {prediction}")
                 self.change_state("listening")
                 self.models["openWakeWord"].reset()
 
     async def run_pipeline(self):
         self.console.print("[1/3] Transcribing audio...")
+        await self.play_notification("Notification2.wav", volume=0.6)
         # Fix: faster-whisper needs a float32 waveform, not a list of raw
         # PCM byte chunks. Concatenate and convert before transcribing.
         raw_audio = b"".join(self.recording)
@@ -84,12 +86,7 @@ class VoiceHandler(AsyncEventHandler):
             await self.send_answer(audio)
 
     async def send_answer(self, audio):
-        # Fix: this method had no body at all (just a comment), which is a
-        # SyntaxError in Python and would have crashed on import. Implemented
-        # actual audio streaming back to the client over the Wyoming protocol.
-        # Assumption: Kokoro's KPipeline yields result objects exposing an
-        # `.audio` attribute (float32 waveform, 24 kHz, mono) - adjust the
-        # attribute name below if your installed kokoro version differs.
+        # Fix: Implemented actual audio streaming back to the client over the Wyoming protocol.
         sample_rate = 16000
         sample_width = 2  # 16-bit PCM
         channels = 1
@@ -113,6 +110,49 @@ class VoiceHandler(AsyncEventHandler):
         self.recording = []
         self._pipeline_task = None
 
+    async def play_notification(self, filename: str, volume: float = 1.0):
+        # [KI] Spielt eine WAV oder MP3 Datei über den Wyoming-Client ab.
+        # volume: 0.0 (stumm) bis 1.0 (volle Lautstärke), default 1.0
+        from math import gcd
+        from pydub import AudioSegment
+
+        sample_rate = 16000
+        sample_width = 2  # 16-bit PCM
+        channels = 1
+
+        # Datei einlesen — pydub erkennt WAV und MP3 automatisch
+        audio = AudioSegment.from_file(filename)
+
+        # Mono und 16-bit sicherstellen
+        audio = audio.set_channels(1).set_sample_width(2)
+
+        # Resampling falls nötig
+        if audio.frame_rate != sample_rate:
+            g = gcd(audio.frame_rate, sample_rate)
+            samples = np.frombuffer(audio.raw_data, dtype=np.int16).astype(np.float32) / 32767.0
+            samples = resample_poly(samples, sample_rate // g, audio.frame_rate // g).astype(np.float32)
+        else:
+            samples = np.frombuffer(audio.raw_data, dtype=np.int16).astype(np.float32) / 32767.0
+
+        # Lautstärke anpassen
+        samples = samples * volume
+
+        # float32 → int16 PCM bytes
+        pcm_bytes = (samples * 32767).astype(np.int16).tobytes()
+
+        # Stream starten
+        await self.write_event(AudioStart(rate=sample_rate, width=sample_width, channels=channels).event())
+
+        # Audio in 512-Sample Chunks senden
+        chunk_size = 512 * 2
+        for i in range(0, len(pcm_bytes), chunk_size):
+            await self.write_event(
+                AudioChunk(rate=sample_rate, width=sample_width, channels=channels, audio=pcm_bytes[i:i+chunk_size]).event()
+            )
+
+        # Stream beenden
+        await self.write_event(AudioStop().event())
+
 
 def load_wws():
     return OpenWakeWord()
@@ -135,10 +175,5 @@ def load_tts():
 
 
 async def start_server(models: dict, console: Console):
-    # Fix: the loaded models from main.py were never passed in here, and
-    # AsyncServer.run() instantiates the handler class itself per
-    # connection, but VoiceHandler.__init__ requires (models, console) in
-    # addition to the connection args. Bind them with functools.partial so
-    # each new connection gets a properly constructed VoiceHandler.
     server = AsyncServer.from_uri("tcp://0.0.0.0:10700")
     await server.run(partial(VoiceHandler, models, console))
