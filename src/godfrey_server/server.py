@@ -5,9 +5,9 @@ from typing import Literal, cast
 import numpy as np
 from rich.console import Console
 from scipy.signal import resample_poly
-from wyoming.server import AsyncEventHandler, AsyncServer
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
 from wyoming.event import Event
+from wyoming.server import AsyncEventHandler, AsyncServer
 
 from godfrey_server.models import *
 

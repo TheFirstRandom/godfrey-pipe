@@ -15,10 +15,10 @@ def cli():
 
     # everything inside this Progress written with help of AI (see index 3 in docs)
     with Progress(
-        SpinnerColumn(),
-        TextColumn("{task.description}"),
-        TimeElapsedColumn(),
-        console=console
+            SpinnerColumn(),
+            TextColumn("{task.description}"),
+            TimeElapsedColumn(),
+            console=console
     ) as progress:
         tasks = [
             ("openWakeWord", server.load_wws),

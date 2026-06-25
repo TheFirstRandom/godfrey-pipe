@@ -1,11 +1,11 @@
 import os
 from pathlib import Path
 
+import faster_whisper
+import kokoro
+import ollama
 import openwakeword
 import silero_vad
-import faster_whisper
-import ollama
-import kokoro
 
 # Fix: `import data` failed because data.py lives inside the godfrey_server
 # package, not as a top-level module. Import it the same way main.py and
@@ -75,8 +75,10 @@ class Qwen:
         ]
 
         options = {}
-        if init: options.update({"num_predict": 1})
-        else: messages.append({"role": "user", "content": user_input})
+        if init:
+            options.update({"num_predict": 1})
+        else:
+            messages.append({"role": "user", "content": user_input})
 
         # Fix: stream=True made ollama.chat() return a generator. server.py
         # treats the result as a finished string (e.g. `len(answer)`),

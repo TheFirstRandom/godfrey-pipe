@@ -1,4 +1,5 @@
 import warnings
+
 from dotenv import load_dotenv
 
 # warning filters AI generated (see index 1 in docs)
