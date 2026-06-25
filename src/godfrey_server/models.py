@@ -111,14 +111,18 @@ class Qwen:
         answer_text = response["message"]["content"]
         tool_calls = response["tool_calls"]
 
+        results = {}
         for call in tool_calls:
             function = call["function"]["name"]
-            messages.append(
-                {"role": "tool", "content": f""}
-            )
+            result = subprocess.run(f"./scripts/{function}")
+            results[function] = result
 
-        if tool_calls:
-            answer_text += "\n" + self._generate(messages, [], {})
+        for name, result in results.items():
+            messages.append({
+                    "role": "tool",
+                    "content": f"Called tool {name}. The tool {"succeeded" if result.returncode == 0 else "failed"}."
+                })
+            answer_text = self._generate(messages, [], {})
 
         return answer_text
 
