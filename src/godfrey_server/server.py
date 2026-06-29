@@ -16,6 +16,26 @@ from godfrey_server.models import *
 
 class VoiceHandler(AsyncEventHandler):
     def __init__(self, models: dict, console: Console, *args, **kwargs):
+        """Represents the connection over wyoming to a client and provides the pipeline for processing audio and
+        answering requests.
+
+        Attributes:
+            state (Literal["waiting", "listening", "processing"]): The state which the server is currently in.
+                - waiting: The server is waiting for the recognition of the wakeword.
+                - listening: The server recognized the wakeword and is now listening for your input.
+                - processing: The VAD
+
+        Methods:
+            handle_event: Gets executed once a wyoming event is received. If the event is a AudioChunk, it executes
+                handle_audio_chunk.
+            handle_audio_chunk: Takes a raw audio chunk. If the server is
+
+        Args:
+            models: A dict containing all model instances loaded by the main module.
+            console: A rich console for formatted text output.
+            *args: Arguments passed to the AsyncEventHandler parent.
+            **kwargs: Keyword Arguments passed to the AsyncEventHandler parent
+        """
         self.models = models
         self.console = console
         super().__init__(*args, **kwargs)
@@ -25,7 +45,7 @@ class VoiceHandler(AsyncEventHandler):
         self._pipeline_task: asyncio.Task | None = None
         self.openwakeword_threshold = os.getenv("OPENWAKEWORD_THRESHOLD", 0.2)
 
-    def change_state(self, state: Literal["waiting", "listening", "processing"]):
+    def _change_state(self, state: Literal["waiting", "listening", "processing"]):
         self.state = state
         self.console.print(f"Server changed state to {state}")
 
@@ -44,7 +64,7 @@ class VoiceHandler(AsyncEventHandler):
             # 16-bit PCM bytes. Convert before feeding it to the model.
             samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
             if self.models["Silero VAD"].predict(samples) is False:
-                self.change_state("processing")
+                self._change_state("processing")
                 self.models["Silero VAD"].reset()
 
                 self._pipeline_task = asyncio.create_task(self.run_pipeline())
@@ -63,7 +83,7 @@ class VoiceHandler(AsyncEventHandler):
             if prediction > float(self.openwakeword_threshold):
                 await self.play_notification("Notification1.wav", volume=0.6)
                 self.console.print(f"\\[openWakeWord\\] predicted {prediction}")
-                self.change_state("listening")
+                self._change_state("listening")
                 self.models["openWakeWord"].reset()
 
     async def run_pipeline(self):
@@ -109,7 +129,7 @@ class VoiceHandler(AsyncEventHandler):
 
     def _on_pipeline_done(self, task: asyncio.Task):
         task.result()
-        self.change_state("waiting")
+        self._change_state("waiting")
         self.recording = []
         self._pipeline_task = None
 
