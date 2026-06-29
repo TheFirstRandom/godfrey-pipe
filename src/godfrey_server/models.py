@@ -1,12 +1,10 @@
-import os
-from pathlib import Path
+import subprocess
 
 import faster_whisper
 import kokoro
 import ollama
 import openwakeword
 import silero_vad
-import subprocess
 
 # Fix: `import data` failed because data.py lives inside the godfrey_server
 # package, not as a top-level module. Import it the same way main.py and
@@ -114,10 +112,6 @@ class Qwen:
                     "role": "tool",
                     "content": f"Called tool {name}. The tool {'succeeded' if result.returncode == 0 else 'failed'}."
                 })
-
-        # in case tools were run
-        if len(messages) < 3:
-            answer_text = self._generate(messages, [], {})["message"]["content"]
 
         return answer_text
 

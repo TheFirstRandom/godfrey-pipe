@@ -1,9 +1,11 @@
 import asyncio
+import gc
 from functools import partial
 from math import gcd
 from typing import Literal, cast
 
 import numpy as np
+import torch
 from pydub import AudioSegment
 from rich.console import Console
 from scipy.signal import resample_poly
@@ -82,7 +84,7 @@ class VoiceHandler(AsyncEventHandler):
             prediction = self.models["openWakeWord"].predict(samples)
             if prediction > float(self.openwakeword_threshold):
                 await self.play_notification("Notification1.wav", volume=0.6)
-                self.console.print(f"\\[openWakeWord\\] predicted {prediction}")
+                self.console.print(f"Predicted the wakeword with [cyan]{prediction}[/cyan]")
                 self._change_state("listening")
                 self.models["openWakeWord"].reset()
 
@@ -94,11 +96,11 @@ class VoiceHandler(AsyncEventHandler):
         raw_audio = b"".join(self.recording)
         audio_array = np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32) / 32768.0
         user_text = self.models["faster-whisper"].transcribe(audio_array)
-        self.console.print("Result:", user_text)
+        self.console.print(f"Result: [italic]{user_text}[/italic]")
 
         self.console.print("[2/3] Generating answer...")
         answer = self.models["Qwen 3"].answer(user_text)
-        self.console.print("Result:", answer)
+        self.console.print(f"Result: [italic]{answer}[/italic]")
 
         self.console.print("[3/3] Generating voice...")
         # Fix: transcribe() requires the text to synthesize; it was being
@@ -132,6 +134,10 @@ class VoiceHandler(AsyncEventHandler):
         self._change_state("waiting")
         self.recording = []
         self._pipeline_task = None
+
+        # Delete unused memory
+        gc.collect()
+        torch.cuda.empty_cache()
 
     async def play_notification(self, filename: str, volume: float = 1.0):
         # [KI] Spielt eine WAV oder MP3 Datei über den Wyoming-Client ab.
