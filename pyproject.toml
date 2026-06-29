@@ -19,6 +19,7 @@ dependencies = [
     "wyoming~=1.9.0",
     "numpy<2",
     "python-dotenv~=1.2.2",
+    "pydub~=0.25.1"
 ]
 authors = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
 maintainers = [{name = "Luis Mühlemann", email = "luis.muehlemann@bbcag.ch"}]
