@@ -18,16 +18,10 @@ class OpenWakeWord:
     def __init__(self):
         openwakeword.utils.download_models()
 
-        model_path_var = os.getenv("OPENWAKEWORD_MODEL_PATH")
-        if not model_path_var:
-            raise ValueError("Missing value for OPENWAKEWORD_MODEL_PATH")
-
-        model_path = Path(model_path_var)
-        if not model_path.exists():
-            raise FileNotFoundError(f"File not found: {model_path}")
+        model_path = data.path_from_env_var("OPENWAKEWORD_MODEL_PATH")
 
         self.model = openwakeword.model.Model(
-            [model_path_var],
+            [str(model_path)],
             inference_framework="onnx",
         )
 

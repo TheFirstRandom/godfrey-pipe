@@ -1,8 +1,10 @@
 import asyncio
 from functools import partial
+from math import gcd
 from typing import Literal, cast
 
 import numpy as np
+from pydub import AudioSegment
 from rich.console import Console
 from scipy.signal import resample_poly
 from wyoming.audio import AudioChunk, AudioStart, AudioStop
@@ -113,15 +115,15 @@ class VoiceHandler(AsyncEventHandler):
     async def play_notification(self, filename: str, volume: float = 1.0):
         # [KI] Spielt eine WAV oder MP3 Datei über den Wyoming-Client ab.
         # volume: 0.0 (stumm) bis 1.0 (volle Lautstärke), default 1.0
-        from math import gcd
-        from pydub import AudioSegment
 
         sample_rate = 16000
         sample_width = 2  # 16-bit PCM
         channels = 1
 
+        path = data.path_from_env_var("NOTIFICATION_SOUNDS_PATH") / filename
+
         # Datei einlesen — pydub erkennt WAV und MP3 automatisch
-        audio = AudioSegment.from_file(filename)
+        audio = AudioSegment.from_file(path)
 
         # Mono und 16-bit sicherstellen
         audio = audio.set_channels(1).set_sample_width(2)

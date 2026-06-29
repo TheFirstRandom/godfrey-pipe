@@ -1,3 +1,19 @@
+import os
+from pathlib import Path
+
+
+def path_from_env_var(var: str) -> Path:
+    var_value = os.getenv(var)
+    if not var_value:
+        raise ValueError(f"Missing value for environment: {var}")
+
+    path = Path(var_value)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+
+    return path
+
+
 system_prompt = """# System Prompt: Godfrey
 
 ## Identity
