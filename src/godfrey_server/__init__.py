@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 # warning filters AI generated (see index 1 in docs)
 warnings.filterwarnings("ignore", category=UserWarning, message=".*dropout option.*")
 warnings.filterwarnings("ignore", category=FutureWarning, message=".*weight_norm.*")
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*ffmpeg or avconv.*")
 
 load_dotenv()
 

@@ -23,6 +23,7 @@ class VoiceHandler(AsyncEventHandler):
         self.state: Literal["waiting", "listening", "processing"] = "waiting"
         self.recording: list[bytes] = []
         self._pipeline_task: asyncio.Task | None = None
+        self.openwakeword_threshold = os.getenv("OPENWAKEWORD_THRESHOLD", 0.2)
 
     def change_state(self, state: Literal["waiting", "listening", "processing"]):
         self.state = state
@@ -59,7 +60,7 @@ class VoiceHandler(AsyncEventHandler):
             # chunk into a proper int16 sample array instead.
             samples = np.frombuffer(raw, dtype=np.int16)
             prediction = self.models["openWakeWord"].predict(samples)
-            if prediction > 0.2:
+            if prediction > float(self.openwakeword_threshold):
                 await self.play_notification("Notification1.wav", volume=0.6)
                 self.console.print(f"\\[openWakeWord\\] predicted {prediction}")
                 self.change_state("listening")
