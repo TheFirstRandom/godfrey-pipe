@@ -105,13 +105,9 @@ class Qwen:
             },
         ]
 
-        # Fix: stream=True made ollama.chat() return a generator. server.py
-        # treats the result as a finished string (e.g. `len(answer)`),
-        # which crashed. Switched to a blocking call and extracted the
-        # final text from the response instead.
         response = self._generate(messages, tools, {})
         answer_text = response["message"]["content"]
-        tool_calls = response["tool_calls"]
+        tool_calls = response["message"].get("tool_calls") or []
 
         results = {}
         for call in tool_calls:
@@ -122,9 +118,12 @@ class Qwen:
         for name, result in results.items():
             messages.append({
                     "role": "tool",
-                    "content": f"Called tool {name}. The tool {"succeeded" if result.returncode == 0 else "failed"}."
+                    "content": f"Called tool {name}. The tool {'succeeded' if result.returncode == 0 else 'failed'}."
                 })
-            answer_text = self._generate(messages, [], {})
+
+        # in case tools were run
+        if len(messages) < 3:
+            answer_text = self._generate(messages, [], {})["message"]["content"]
 
         return answer_text
 
