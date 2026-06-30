@@ -56,12 +56,18 @@ class VoiceHandler(AsyncEventHandler):
         self.recording: list[bytes] = []
         self._pipeline_task: asyncio.Task | None = None
         self.openwakeword_threshold = os.getenv("OPENWAKEWORD_THRESHOLD", 0.2)
+        self.play_intro = True
 
     def _change_state(self, state: Literal["waiting", "listening", "processing"]):
         self.state = state
         self.console.print(f"Server changed state to {state}")
 
     async def handle_event(self, event: Event) -> bool:
+        if self.play_intro:
+            self.console.print("Playing intro")
+            await self.play_notification("godfrey_intro.wav", volume=0.8)
+            self.play_intro = False
+
         if AudioChunk.is_type(event.type):
             chunk = AudioChunk.from_event(event)
             await self.handle_audio_chunk(chunk.audio)
