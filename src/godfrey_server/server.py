@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import os
 from functools import partial
 from math import gcd
 from typing import Literal, cast
@@ -18,19 +19,28 @@ from godfrey_server.models import *
 
 class VoiceHandler(AsyncEventHandler):
     def __init__(self, models: dict, console: Console, *args, **kwargs):
-        """Represents the connection over wyoming to a client and provides the pipeline for processing audio and
-        answering requests.
+        """The wyoming connection to a client and provides the pipeline for processing audio and answering requests.
+
+        Once executed with async, this class will continuously wait for audio chunks, check them for the wakeword
+        and run the pipeline, if the wakeword is recognized. The pipeline will generate a answer in voice and
+        send it back to the client.
 
         Attributes:
             state (Literal["waiting", "listening", "processing"]): The state which the server is currently in.
                 - waiting: The server is waiting for the recognition of the wakeword.
                 - listening: The server recognized the wakeword and is now listening for your input.
-                - processing: The VAD
+                    The VAD will detect your speech's end.
+                - processing: The pipeline is processing your request. No new requests will be processed during this.
 
         Methods:
             handle_event: Gets executed once a wyoming event is received. If the event is a AudioChunk, it executes
                 handle_audio_chunk.
-            handle_audio_chunk: Takes a raw audio chunk. If the server is
+            handle_audio_chunk: Takes a raw audio chunk. If the server is in processing state, it will only return
+                (server can only process one request at the time).
+                In waiting state, it will get the prediction for this chunk from openwakeword and
+                change the state to listening if the prediction exceeds the threshold.
+                In listening state, it will append the chunk to the audio til the VAD detects an end of speech.
+            run_pipeline: 
 
         Args:
             models: A dict containing all model instances loaded by the main module.
@@ -66,6 +76,7 @@ class VoiceHandler(AsyncEventHandler):
             # 16-bit PCM bytes. Convert before feeding it to the model.
             samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768.0
             if self.models["Silero VAD"].predict(samples) is False:
+                await self.play_notification("Notification2.wav", volume=0.6)
                 self._change_state("processing")
                 self.models["Silero VAD"].reset()
 
@@ -90,7 +101,6 @@ class VoiceHandler(AsyncEventHandler):
 
     async def run_pipeline(self):
         self.console.print("[1/3] Transcribing audio...")
-        await self.play_notification("Notification2.wav", volume=0.6)
         # Fix: faster-whisper needs a float32 waveform, not a list of raw
         # PCM byte chunks. Concatenate and convert before transcribing.
         raw_audio = b"".join(self.recording)
