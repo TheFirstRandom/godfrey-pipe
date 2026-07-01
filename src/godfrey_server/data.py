@@ -7,6 +7,17 @@ from scipy.signal import resample_poly
 
 
 def path_from_env_var(var: str) -> Path:
+    """Gets the value of an environment variable, converts it to a ``Path`` and checks the existence it.
+
+    Args:
+        var (str): The environment variables name.
+
+    Returns: A ``Path`` object pointing on the path in the env var.
+
+    Raises:
+        ValueError: If the environment variable is not set.
+        FileNotFoundError: If the object, the path points to, does not exist.
+    """
     var_value = os.getenv(var)
     if not var_value:
         raise ValueError(f"Missing value for environment: {var}")

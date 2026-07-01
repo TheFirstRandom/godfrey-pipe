@@ -9,6 +9,10 @@ from godfrey_server import server, models
 
 
 def cli():
+    """The entrypoint for the Godfrey server. Loads all models and starts the server.
+
+    It also shows the progress while loading models. The models load parallel by using a ``ThreadPoolExecutor``.
+    """
     console = Console(highlight=False)
     console.print("Waking up Godfrey...", style="bold")
     console.print(f"Server version: {version('godfrey-pipe')}\n")
