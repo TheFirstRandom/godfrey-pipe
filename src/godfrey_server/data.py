@@ -1,5 +1,9 @@
 import os
+from math import gcd
 from pathlib import Path
+
+import numpy as np
+from scipy.signal import resample_poly
 
 
 def path_from_env_var(var: str) -> Path:
@@ -14,6 +18,139 @@ def path_from_env_var(var: str) -> Path:
     return path
 
 
+# AI gen
+def pcm16_bytes_to_float32(raw: bytes, scale: float = 32768.0) -> np.ndarray:
+    """Decodes raw 16-bit PCM bytes into a normalized float32 array.
+
+    Args:
+        raw: Raw PCM bytes (int16, little-endian).
+        scale: Normalization factor. 32768.0 is the common standard
+            (the negative extreme value lands exactly on -1.0), 32767.0
+            is used in some codebases instead.
+
+    Returns:
+        float32 array with values roughly in the range [-1.0, 1.0].
+    """
+    int_samples = np.frombuffer(raw, dtype=np.int16)
+    return int_samples.astype(np.float32) / scale
+
+
+# AI gen
+def pcm16_bytes_to_int16_array(raw: bytes) -> np.ndarray:
+    """Decodes raw 16-bit PCM bytes into an int16 array (no normalization).
+
+    Args:
+        raw: Raw PCM bytes (int16, little-endian).
+
+    Returns:
+        int16 array with values in the range -32768..32767.
+    """
+    return np.frombuffer(raw, dtype=np.int16)
+
+
+# AI gen
+def join_chunks_to_float32(chunks: list[bytes], scale: float = 32768.0) -> np.ndarray:
+    """Concatenates multiple byte chunks (e.g. recording frames) and decodes them.
+
+    Args:
+        chunks: List of raw PCM16 byte chunks in recording order.
+        scale: Normalization factor, see pcm16_bytes_to_float32.
+
+    Returns:
+        float32 array with values roughly in the range [-1.0, 1.0].
+    """
+    raw = b"".join(chunks)
+    return pcm16_bytes_to_float32(raw, scale=scale)
+
+
+# AI gen
+def float32_to_pcm16_bytes(samples: np.ndarray, scale: float = 32767.0) -> bytes:
+    """Encodes a float32 array (roughly in the range [-1.0, 1.0]) back to PCM16 bytes.
+
+    Args:
+        samples: float32 array with normalized audio samples.
+        scale: Scaling factor when converting back to int16.
+
+    Returns:
+        Raw 16-bit PCM bytes.
+    """
+    samples = np.asarray(samples, dtype=np.float32)
+    return (samples * scale).astype(np.int16).tobytes()
+
+
+# AI gen
+def resample_by_ratio(samples: np.ndarray, up: int, down: int) -> np.ndarray:
+    """Resamples a float32 array by the integer ratio up/down.
+
+    Args:
+        samples: Input samples as a float32 array.
+        up: Up-sampling factor.
+        down: Down-sampling factor.
+
+    Returns:
+        Resampled float32 array (with anti-aliasing filter).
+    """
+    resampled = resample_poly(np.asarray(samples, dtype=np.float32), up, down)
+    return resampled.astype(np.float32)
+
+
+# AI gen
+def resample_to_rate(
+        samples: np.ndarray, orig_rate: int, target_rate: int = 16000
+) -> np.ndarray:
+    """Resamples a float32 array from orig_rate to target_rate.
+
+    Reduces the ratio via the greatest common divisor (gcd) so that
+    resample_poly works with the smallest possible integer factors.
+
+    Args:
+        samples: Input samples as a float32 array.
+        orig_rate: Original sample rate in Hz.
+        target_rate: Target sample rate in Hz (default: 16000).
+
+    Returns:
+        Resampled float32 array at target_rate. If orig_rate already
+        equals target_rate, the array is returned unchanged.
+    """
+    if orig_rate == target_rate:
+        return np.asarray(samples, dtype=np.float32)
+    g = gcd(orig_rate, target_rate)
+    return resample_by_ratio(samples, target_rate // g, orig_rate // g)
+
+
+# AI gen
+def pcm16_bytes_resample_to_rate(
+        raw: bytes,
+        orig_rate: int,
+        target_rate: int = 16000,
+        volume: float = 1.0,
+        decode_scale: float = 32767.0,
+        encode_scale: float = 32767.0,
+) -> bytes:
+    """Full roundtrip: decode PCM16 bytes, resample, re-encode.
+
+    Corresponds to the pattern from Example 5: if the sample rate differs,
+    resampling is performed; otherwise only normalization/denormalization
+    is applied.
+
+    Args:
+        raw: Raw PCM16 bytes at orig_rate.
+        orig_rate: Original sample rate in Hz.
+        target_rate: Target sample rate in Hz (default: 16000).
+        volume: Volume factor for the output.
+        decode_scale: Normalization factor when decoding.
+        encode_scale: Scaling factor when encoding.
+
+    Returns:
+        Raw PCM16 bytes at target_rate.
+    """
+    samples = pcm16_bytes_to_float32(raw, scale=decode_scale)
+    samples = resample_to_rate(samples, orig_rate, target_rate)
+    samples = samples * volume
+    return float32_to_pcm16_bytes(samples, scale=encode_scale)
+
+
+#  AI gen
 system_prompt = """# System Prompt: Godfrey
 
 ## Identity
