@@ -5,7 +5,7 @@ from importlib.metadata import version
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
-from godfrey_server import server
+from godfrey_server import server, models
 
 
 def cli():
@@ -21,11 +21,11 @@ def cli():
             console=console
     ) as progress:
         tasks = [
-            ("openWakeWord", server.load_wws),
-            ("Silero VAD", server.load_vad),
-            ("faster-whisper", server.load_stt),
-            ("Qwen 3", server.load_llm),
-            ("Kokoro TTS", server.load_tts),
+            ("openWakeWord", models.OpenWakeWord),
+            ("Silero VAD", models.SileroVAD),
+            ("faster-whisper", models.FasterWhisper),
+            ("Qwen 3", models.Qwen),
+            ("Kokoro TTS", models.KokoroTTS),
         ]
 
         with ThreadPoolExecutor() as executor:

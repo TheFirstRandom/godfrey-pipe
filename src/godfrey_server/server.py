@@ -170,26 +170,6 @@ class VoiceHandler(AsyncEventHandler):
         await self.write_event(AudioStop().event())
 
 
-def load_wws():
-    return OpenWakeWord()
-
-
-def load_vad():
-    return SileroVAD()
-
-
-def load_stt():
-    return FasterWhisper()
-
-
-def load_llm():
-    return Qwen()
-
-
-def load_tts():
-    return KokoroTTS()
-
-
 async def start_server(models: dict, console: Console):
     server = AsyncServer.from_uri("tcp://0.0.0.0:10700")
     await server.run(partial(VoiceHandler, models, console))
