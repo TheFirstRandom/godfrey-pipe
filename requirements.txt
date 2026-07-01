@@ -1,7 +1,4 @@
 uv~=0.11.20
-mkdocs-material~=9.7.6
-mkdocstrings[python]
-rich~=15.0.0
 rich~=15.0.0
 openwakeword~=0.6.0
 silero-vad~=6.2.1
@@ -9,7 +6,6 @@ faster-whisper~=1.2.1
 ollama~=0.6.2
 kokoro~=0.9.4
 wyoming~=1.9.0
-huggingface_hub[cli]
 numpy<2
 python-dotenv~=1.2.2
 pydub~=0.25.1

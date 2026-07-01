@@ -3,7 +3,7 @@
 **Install build dependencies**
 
 ```bash
-sudo apt install pipx
+sudo apt install pipx git curl
 pipx install uv
 ```
 
