@@ -6,6 +6,7 @@ import ollama
 import openwakeword
 import silero_vad
 from ollama import ChatResponse
+from ddgs import DDGS
 
 # Fix: `import data` failed because data.py lives inside the godfrey_server
 # package, not as a top-level module. Import it the same way main.py and
@@ -147,19 +148,54 @@ class Qwen:
                     }
                 }
             },
+            # ... deine bestehenden turn_on_lights / turn_off_lights ...
+            {
+                "type": "function",
+                "function": {
+                    "name": "search_web",
+                    "description": "Search the internet for current information",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "The search query"
+                            }
+                        },
+                        "required": ["query"]
+                    }
+                }
+            },
         ]
 
         response = self._generate(messages, tools, {})
-        answer_text = response["message"]["content"].replace("*", "")
         tool_calls = response["message"].get("tool_calls") or []
 
-        results = {}
+        # Kein Tool nötig -> direkt antworten, wie bisher
+        if not tool_calls:
+            return response["message"]["content"].replace("*", "")
+
+        # Modell hat Tools aufgerufen -> Nachricht des Modells zur History hinzufügen
+        messages.append(response["message"])
+
         for call in tool_calls:
             function = call["function"]["name"]
-            result = subprocess.run(f"./scripts/{function}")
-            results[function] = result
 
-        return answer_text
+            if function == "search_web":
+                query = call["function"]["arguments"]["query"]
+                result = search_web(query)
+            else:
+                result = subprocess.run(f"./scripts/{function}")
+
+            # WICHTIG: Ergebnis als "tool"-Nachricht zurückgeben
+            messages.append({
+                "role": "tool",
+                "content": str(result),
+            })
+
+        # Zweiter Aufruf: Modell sieht die Suchresultate und formuliert die finale Antwort
+        final_response = self._generate(messages, tools, {})
+        return final_response["message"]["content"].replace("*", "")
 
     @staticmethod
     def _generate(messages: list, tools: list, options: dict) -> ChatResponse:
@@ -210,3 +246,11 @@ class KokoroTTS:
             split_pattern=r"\n+"
         )
         return [i for i in generator]
+def search_web(query: str, max_results: int = 5) -> str:
+    """
+    Searches for a web search query.
+    Args:
+        query: The search query."""
+    with DDGS() as ddgs:
+        results = list(ddgs.text(query, max_results=max_results))
+    return "/n/n".join(f"{r['title']}: {r['url']}" for r in results)

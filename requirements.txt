@@ -9,3 +9,4 @@ wyoming~=1.9.0
 numpy<2
 python-dotenv~=1.2.2
 pydub~=0.25.1
+ddgs==9.14.4
